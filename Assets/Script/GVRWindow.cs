@@ -4,75 +4,110 @@ using System.Threading.Tasks;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
+using System;
+
 public class GVRWindow : EditorWindow
 {
-
-    private static string rootPath = Directory.GetCurrentDirectory();
-    private static string templatePath = rootPath+ "Assets/Plugins/Android/mainTemplate.gradle";
-
-
-    private static string[] mainTemplatelist = {"implementation 'androidx.appcompat:appcompat:1.0.0'",
-                                          "implementation 'androidx.constraintlayout:constraintlayout:1.1.3'",
-                                          "implementation 'com.google.android.gms:play-services-vision:15.0.2'",
-                                          "implementation 'com.google.android.material:material:1.0.0'",
-                                          "implementation 'com.google.protobuf:protobuf-javalite:3.8.0'"
-    };
-
-    private static string[] gradleTemplate = {"android.enableJetifier=true",
-                                        "android.useAndroidX=true"};
-    
-    
-
+    private int issues = 0;
+    private String Age;
     [MenuItem("Window/GVR")]
     // Start is called before the first frame update
     public static void ShowWindow()
     {
         EditorWindow.GetWindow(typeof(GVRWindow));
     }
+   
     private void OnGUI()
     {
-        GUILayout.Label("Information ", EditorStyles.boldLabel);
-        if(GUILayout.Button("Switch to Android"))
+        issues = 0;
+        
+        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
         {
-            Debug.Log("Button Clicked");
-            if(EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+            
+            if (GUILayout.Button("FIx Android Build"))
             {
-                EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.Android);
-            }
-            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2)
-            {
-                PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3, UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2 });
-            }
-            Screen.autorotateToLandscapeLeft = true;
-            PlayerSettings.Android.forceInternetPermission = true;
-           
+                if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+                {
+                    EditorUserBuildSettings.SwitchActiveBuildTargetAsync(BuildTargetGroup.Android, BuildTarget.Android);
 
+                }
+            }
 
         }
-
-        if (GUILayout.Button("Create Folder"))
+        
+        if(PlayerSettings.GetGraphicsAPIs(BuildTarget.Android)[0].ToString() == "Vulkan")
+        //if(UnityEngine.Rendering.GraphicsDeviceType.Vulkan )
         {
-            if (AssetDatabase.IsValidFolder("Assets/Plugins/Android"))
+            Debug.Log("Trapped");
+            issues += 1;
+            if (GUILayout.Button("Fix Graphics"))
             {
-                Debug.Log("Folder is Available");
+                try
+                {
+                    PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2, UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 });
+                }
+                catch (Exception)
+                {
+                    
+                    GUILayout.Label("Unable to Set Graphics API's");
+                }
+                
             }
-            else
+        }
+ 
+        if(PlayerSettings.GetScriptingBackend(BuildTargetGroup.Android).ToString()!= "IL2CPP")
+        {
+            issues += 1;
+            GUILayout.Label("Fix Scripting issue");
+            if (GUILayout.Button("Fix issue"))
             {
-                Debug.Log("Folder is not Available");
+                PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
+                PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARMv7;
             }
-            /*if (!Directory.Exists(Directory.GetCurrentDirectory() + "Assets/Plugins/Android/"))
+        }
+        if(!PlayerSettings.Android.targetArchitectures.ToString().Contains("ARMv7") || !PlayerSettings.Android.targetArchitectures.ToString().Contains("ARM64"))
+        {
+            issues += 1;
+            GUILayout.Label("Fix Android Architecture issue");
+            if (GUILayout.Button("Fix issue"))
             {
-                Directory.CreateDirectory(Directory.GetCurrentDirectory() + "Assets/Plugins/Android/");
-                Debug.Log(templatePath);
-                File.WriteAllLines(templatePath, mainTemplatelist);
+                AndroidArchitecture aac = AndroidArchitecture.ARMv7 | AndroidArchitecture.ARM64;
+                PlayerSettings.Android.targetArchitectures = aac;
+
             }
-            else
+        }
+        if(!PlayerSettings.Android.forceInternetPermission)
+        {
+            issues += 1;
+            GUILayout.Label("Fix internet issue");
+            if (GUILayout.Button("Fix issue"))
             {
-                Debug.Log("Created File");
-            }*/
+                PlayerSettings.Android.forceInternetPermission = true;
+
+            }
+        }
+       
+      
+       
+        //FIx Buttons
+
+        if(issues<=0)
+        {
+            GUILayout.Label("No Issues are found in this GVR Project You can build the Project",EditorStyles.wordWrappedLabel);
+        }
+        else
+        {
+            GUILayout.Label("Total Issues : " + issues.ToString(), EditorStyles.boldLabel);
         }
 
 
+        //Andoid Publishing settings
+        GUILayout.BeginArea(new Rect(Screen.width/2-150, Screen.height / 2 - 125, 300, 50));
+        Age = GUILayout.TextArea(Age,64);
+        GUILayout.EndArea();
+        
+
+        
     }
 
     
