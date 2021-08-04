@@ -102,10 +102,10 @@ public class GVRWindow : EditorWindow
 
 
         //Andoid Publishing settings
-        GUILayout.BeginArea(new Rect(Screen.width/2-150, Screen.height / 2 - 125, 300, 50));
+        /*GUILayout.BeginArea(new Rect(Screen.width/2-150, Screen.height / 2 - 125, 300, 50));
         Age = GUILayout.TextArea(Age,64);
         GUILayout.EndArea();
-        
+        */
 
         
     }
